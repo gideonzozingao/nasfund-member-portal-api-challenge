@@ -8,33 +8,46 @@ use Illuminate\Support\Collection;
 class CsvParser
 {
     /**
-     * Parse a CSV UploadedFile into a Collection of associative arrays.
-     * The first row is treated as the header.
+     * Canonical camelCase keys this parser guarantees in every output row.
      *
-     * Expected headers (case-insensitive):
-     *   firstName, lastName, dateOfBirth, gender, email,
-     *   phone, employerName, employmentStatus, taxFileNumber
+     * The lookup key is the header reduced to lowercase with all
+     * whitespace, underscores, and hyphens removed, so every common
+     * variation (FirstName / first_name / FIRST-NAME / "First Name")
+     * resolves to the same slug and maps to the same canonical key.
      */
+    private const HEADER_MAP = [
+        'firstname'        => 'firstName',
+        'lastname'         => 'lastName',
+        'dateofbirth'      => 'dateOfBirth',
+        'dob'              => 'dateOfBirth',
+        'gender'           => 'gender',
+        'email'            => 'email',
+        'phone'            => 'phone',
+        'employername'     => 'employerName',
+        'employmentstatus' => 'employmentStatus',
+        'taxfilenumber'    => 'taxFileNumber',
+        'tfn'              => 'taxFileNumber',
+    ];
+
     /**
      * Parse from a stored file path (used by the background job).
      */
     public function parseFromPath(string $path): Collection
     {
-        // Reuse the same logic via a temporary UploadedFile wrapper
         $uploaded = new UploadedFile($path, basename($path), null, null, true);
         return $this->parse($uploaded);
     }
 
     public function parse(UploadedFile $file): Collection
     {
-        $rows      = [];
-        $handle    = fopen($file->getRealPath(), 'r');
-        $headers   = null;
+        $rows    = [];
+        $handle  = fopen($file->getRealPath(), 'r');
+        $headers = null;
 
         while (($line = fgetcsv($handle, 1000, ',')) !== false) {
             if ($headers === null) {
-                // Normalise headers: trim whitespace
-                $headers = array_map('trim', $line);
+                // Normalise every header once, up front.
+                $headers = array_map([$this, 'normaliseHeader'], $line);
                 continue;
             }
 
@@ -42,12 +55,7 @@ class CsvParser
                 continue; // skip malformed rows silently
             }
 
-            $row = array_combine($headers, array_map('trim', $line));
-
-            // Normalise common header variations
-            $row = $this->normaliseKeys($row);
-
-            $rows[] = $row;
+            $rows[] = array_combine($headers, array_map('trim', $line));
         }
 
         fclose($handle);
@@ -56,27 +64,29 @@ class CsvParser
     }
 
     /**
-     * Map common CSV header variations to the canonical camelCase keys.
+     * Reduce a raw header string to its canonical camelCase key.
+     *
+     * Resolution order:
+     *   1. Trim surrounding whitespace.
+     *   2. Build a lowercase slug by stripping spaces, underscores and hyphens.
+     *   3. Look the slug up in HEADER_MAP.
+     *   4. If not found, fall back to a generic camelCase conversion so
+     *      unexpected columns survive rather than getting silently dropped.
      */
-    private function normaliseKeys(array $row): array
+    private function normaliseHeader(string $header): string
     {
-        $map = [
-            'first_name'        => 'firstName',
-            'last_name'         => 'lastName',
-            'date_of_birth'     => 'dateOfBirth',
-            'dob'               => 'dateOfBirth',
-            'employer_name'     => 'employerName',
-            'employment_status' => 'employmentStatus',
-            'tax_file_number'   => 'taxFileNumber',
-            'tfn'               => 'taxFileNumber',
-        ];
+        $trimmed = trim($header);
+        $slug    = strtolower(preg_replace('/[\s_\-]+/', '', $trimmed));
 
-        $normalised = [];
-        foreach ($row as $key => $value) {
-            $canonical           = $map[strtolower($key)] ?? $key;
-            $normalised[$canonical] = $value;
+        if (isset(self::HEADER_MAP[$slug])) {
+            return self::HEADER_MAP[$slug];
         }
 
-        return $normalised;
+        // Generic fallback: "Some Column" / "some_column" → "someColumn"
+        $words = preg_split('/[\s_\-]+/', $trimmed);
+        $camel = strtolower(array_shift($words))
+            . implode('', array_map('ucfirst', array_map('strtolower', $words)));
+
+        return $camel;
     }
 }

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
-class BulkMemberDataProcessiong implements ShouldQueue
+class BulkMemberDataProcessing implements ShouldQueue
 {
     use Queueable, InteractsWithQueue, SerializesModels;
 

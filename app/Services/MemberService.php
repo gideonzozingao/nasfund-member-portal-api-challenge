@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Actions\CreateMemberAction;
+use App\DTOs\CreateMemberResponseDTO;
 use App\Models\Member;
 
 class MemberService
@@ -12,9 +13,11 @@ class MemberService
     /**
      * Create a single member via the API.
      */
-    public function create(array $data): array
+    public function create(array $data): CreateMemberResponseDTO
     {
-        return $this->createAction->execute($data);
+        return CreateMemberResponseDTO::fromActionResult(
+            $this->createAction->execute($data)
+        );
     }
 
     /**

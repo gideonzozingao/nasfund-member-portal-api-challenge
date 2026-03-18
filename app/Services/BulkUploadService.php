@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Jobs\BulkMemberDataProcessiong;
+use App\Jobs\BulkMemberDataProcessing;
 use App\Models\BulkUploadBatch;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
@@ -40,7 +40,7 @@ class BulkUploadService
         ]);
 
         // 3. Dispatch the job — passes only the batch_id (small payload)
-        BulkMemberDataProcessiong::dispatch($batch->batch_id)
+        BulkMemberDataProcessing::dispatch($batch->batch_id)
             ->onQueue('bulk-uploads');   // dedicated queue keeps bulk work
         // from blocking single-member creates
 

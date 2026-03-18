@@ -17,20 +17,17 @@ class MemberController extends Controller
 
     // ── POST /api/v1/members/create ────────────────────────────
 
+    // ── POST /api/v1/members/create ────────────────────────────
+
+    // ── POST /api/v1/members/create ────────────────────────────
+
     public function create(CreateMemberRequest $request): JsonResponse
     {
-        $result = $this->memberService->create($request->validated());
+        $dto = $this->memberService->create($request->validated());
 
-        $httpStatus = match ($result['status']) {
-            'success' => 201,
-            'warning' => 201,
-            default   => 422,
-        };
-
-        return response()
-            ->json($this->envelope($result), $httpStatus);
-        // return response()->json(['success' => 201,], 201);
+        return response()->json($dto->toArray(), $dto->httpStatus());
     }
+
 
     // ── POST /api/v1/members/bulk-upload ───────────────────────
     //    Stores the file and dispatches the job. Returns 202 immediately.
