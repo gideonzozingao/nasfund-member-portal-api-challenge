@@ -43,9 +43,6 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // ── Rate limiters ──────────────────────────────────────
-        // Defined here because Laravel 12 no longer uses RouteServiceProvider.
-
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)
                 ->by($request->ip())
@@ -67,8 +64,5 @@ class AppServiceProvider extends ServiceProvider
                     'data'    => null,
                 ], 429));
         });
-
-        // ── Observers ──────────────────────────────────────────
-        // \App\Models\Member::observe(\App\Observers\MemberObserver::class);
     }
 }
