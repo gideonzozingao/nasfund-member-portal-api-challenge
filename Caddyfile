@@ -1,0 +1,73 @@
+# ╔══════════════════════════════════════════════════════════╗
+# ║           Caddyfile — FrankenPHP + Laravel Octane        ║
+# ║                                                          ║
+# ║  Local dev  :  http://localhost:30325                    ║
+# ║  Production :  swap the site address block below        ║
+# ╚══════════════════════════════════════════════════════════╝
+
+{
+    # ── Global options ─────────────────────────────────────
+    # Enable FrankenPHP as the PHP runtime
+    frankenphp
+
+    # Disable the Caddy admin API in production (uncomment)
+    # admin off
+
+    # Local dev: disable automatic HTTPS so Caddy doesn't
+    # try to obtain a certificate for localhost
+    auto_https off
+}
+
+# ── Site block ─────────────────────────────────────────────
+# Change this to your domain in production, e.g.:
+#   api.nasfund.com.pg
+#   api.nasfund.com.pg:443
+http://localhost:30325 {
+
+    # ── Logging ────────────────────────────────────────────
+    log {
+        output file storage/logs/caddy-access.log {
+            roll_size     100mb
+            roll_keep     7
+            roll_keep_for 720h
+        }
+        format json
+        level  INFO
+    }
+
+    # ── Document root ──────────────────────────────────────
+    # Points to Laravel's public/ directory
+    root * /var/www/member-api/public
+
+    # ── Encode (compression) ───────────────────────────────
+    encode zstd br gzip
+
+    # ── Security headers ───────────────────────────────────
+    header {
+        # Remove server fingerprint
+        -Server
+        -X-Powered-By
+
+        # Prevent MIME-type sniffing
+        X-Content-Type-Options    "nosniff"
+
+        # Clickjacking protection
+        X-Frame-Options           "DENY"
+
+        # Basic XSS protection
+        X-XSS-Protection          "1; mode=block"
+
+        # HSTS — enable in production once TLS is confirmed working
+        # Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+        # API-only: no referrer needed
+        Referrer-Policy           "no-referrer"
+    }
+
+    # ── PHP via FrankenPHP ─────────────────────────────────
+    # php_server handles:
+    #   - Passing .php files to the FrankenPHP worker
+    #   - Falling back to index.php for all non-file requests
+    #     (required for Laravel's front-controller pattern)
+    php_server
+}
