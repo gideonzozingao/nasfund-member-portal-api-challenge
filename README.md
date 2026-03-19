@@ -99,14 +99,7 @@ php artisan migrate:fresh --seed
 API Token Seeder Output
 Seeding database example.
 
-Database\Seeders\ApiTokenSeeder .......................................................................................................... RUNNING
-Nasfund — Testing API Token            KqmRjPY3WtxBR6d5yb7E19Nvk9kXsw77gbsfTMpQczD1nJXq3c8gp7kDRm7AjCSj
-Nasfund — Production API Token         LaDcFAbBxWPMQB19JzUIpQWil9E9UJaOIuFpwAFdufCXtbuoiUTxOUmNfcNGWDXI
-
-Copy the tokens above — they are not stored in recoverable form.
-Database\Seeders\ApiTokenSeeder ....................................................................................................... 18 ms DONE
-
-Important: Copy the tokens immediately—they cannot be recovered.
+Important: Copy the tokens immediately and store it safely, they cannot be recovered.
 
 ### 6. Start  the php server Server
 
@@ -191,15 +184,7 @@ Health check (no auth required)
 
 ---
 
-## 🧪 Running Tests
-
-```bash
-php artisan test
-```
-
----
-
-## 🏗️ Production Notes
+## Production Notes
 
 * Use PostgreSQL/MySQL instead of SQLite
 * Add queues (Redis + Horizon) for bulk processing
@@ -209,7 +194,7 @@ php artisan test
 
 ---
 
-## ✅ Summary
+## Summary
 
 * Clean layered architecture
 * Token-based authentication
