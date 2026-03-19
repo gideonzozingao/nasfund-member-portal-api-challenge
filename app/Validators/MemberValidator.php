@@ -19,7 +19,7 @@ class MemberValidator
             'dateOfBirth' => ['required', 'date', 'date_format:Y-m-d'],
             'gender' => ['required', 'in:M,F'],
             'email' => ['required', 'email', 'max:255'],
-            'phone' => ['required', 'regex:/^\+675\s?\d{7,8}$/'],
+            'phone' => ['required', 'regex:/^\+675\s?\d{7,8}$/', 'max:12'],
             'employerName' => ['required', 'string', 'max:255'],
             'employmentStatus' => ['required', 'in:Active,On-Leave,Terminated'],
             'taxFileNumber' => ['required', 'regex:/^\d{8}$/'],
