@@ -4,7 +4,7 @@ A clean Laravel REST API for registering and managing fund members.
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 Ensure the following are installed:
 
@@ -120,7 +120,7 @@ http://127.0.0.1:8000/api/v1
 
 ---
 
-## 🔐 Authentication (Bearer Token)
+## Authentication (Bearer Token)
 
 All member endpoints require a Bearer token.
 
