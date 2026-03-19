@@ -26,8 +26,8 @@ Infrastructure    — Database (SQLite / PostgreSQL), Logger, CsvParser
 ## Setup
 
 ```bash
-git clone <repo>
-cd member-api
+git clone git@github.com:gideonzozingao/nasfund-member-portal-api-challenge.git
+cd nasfund-member-portal-api-challenge
 composer install
 cp .env.example .env
 php artisan key:generate
