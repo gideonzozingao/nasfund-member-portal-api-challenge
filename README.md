@@ -2,8 +2,6 @@
 
 A clean Laravel REST API for registering and managing fund members.
 
---
-
 ## Prerequisites
 
 Ensure the following are installed:
