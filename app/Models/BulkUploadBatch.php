@@ -24,8 +24,8 @@ class BulkUploadBatch extends Model
     ];
 
     protected $casts = [
-        'results'      => 'array',
-        'started_at'   => 'datetime',
+        'results' => 'array',
+        'started_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
 
@@ -63,12 +63,12 @@ class BulkUploadBatch extends Model
     public function getSummaryAttribute(): array
     {
         return [
-            'total'      => $this->total_rows,
-            'processed'  => $this->processed_rows,
-            'success'    => $this->success_count,
-            'warnings'   => $this->warning_count,
-            'failed'     => $this->failed_count,
-            'progress'   => $this->progress . '%',
+            'total' => $this->total_rows,
+            'processed' => $this->processed_rows,
+            'success' => $this->success_count,
+            'warnings' => $this->warning_count,
+            'failed' => $this->failed_count,
+            'progress' => $this->progress.'%',
         ];
     }
 

@@ -3,7 +3,6 @@
 namespace App\Repositories;
 
 use App\Models\Member;
-use Illuminate\Support\Collection;
 
 class MemberRepository
 {
@@ -53,6 +52,7 @@ class MemberRepository
     public function nextMemberId(): string
     {
         $last = Member::withTrashed()->max('id') ?? 0;
-        return 'M' . str_pad($last + 1, 9, '0', STR_PAD_LEFT);
+
+        return 'M'.str_pad($last + 1, 9, '0', STR_PAD_LEFT);
     }
 }

@@ -11,13 +11,9 @@ use Illuminate\Http\Request;
 class MemberController extends Controller
 {
     public function __construct(
-        private MemberService      $memberService,
-        private BulkUploadService  $bulkUploadService,
+        private MemberService $memberService,
+        private BulkUploadService $bulkUploadService,
     ) {}
-
-    // ── POST /api/v1/members/create ────────────────────────────
-
-    // ── POST /api/v1/members/create ────────────────────────────
 
     // ── POST /api/v1/members/create ────────────────────────────
 
@@ -28,9 +24,7 @@ class MemberController extends Controller
         return response()->json($dto->toArray(), $dto->httpStatus());
     }
 
-
     // ── POST /api/v1/members/bulk-upload ───────────────────────
-    //    Stores the file and dispatches the job. Returns 202 immediately.
 
     public function bulkUpload(Request $request): JsonResponse
     {
@@ -38,50 +32,23 @@ class MemberController extends Controller
             'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
         ]);
 
-        $batch = $this->bulkUploadService
-            ->dispatch($request->file('file'));
+        $summary = $this->bulkUploadService->process($request->file('file'));
+
+        $status = match (true) {
+            $summary['errorCount'] === $summary['totalRecords'] => 'error',
+            $summary['errorCount'] > 0 => 'partial',
+            default => 'success',
+        };
 
         return response()->json([
-            'status'   => 'accepted',
-            'message'  => 'Your file has been queued for processing.',
-            'batch_id' => $batch->batch_id,
-            'poll_url' => url("/api/v1/members/bulk-upload/{$batch->batch_id}/status"),
-        ], 202);
-    }
-
-    // ── GET /api/v1/members/bulk-upload/{batchId}/status ───────
-    //    Polled by the client to check progress and retrieve results.
-
-    public function uploadStatus(string $batchId): JsonResponse
-    {
-        $batch = $this->bulkUploadService->findBatch($batchId);
-
-        if (! $batch) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Batch not found.',
-            ], 404);
-        }
-
-        $payload = [
-            'status'   => $batch->status,
-            'batch_id' => $batch->batch_id,
-            'file'     => $batch->original_filename,
-            'summary'  => $batch->summary,
-            'timing'   => [
-                'queued_at'    => $batch->created_at?->toIso8601String(),
-                'started_at'   => $batch->started_at?->toIso8601String(),
-                'completed_at' => $batch->completed_at?->toIso8601String(),
+            'status' => $status,
+            'summary' => [
+                'totalRecords' => $summary['totalRecords'],
+                'successCount' => $summary['successCount'],
+                'errorCount' => $summary['errorCount'],
             ],
-        ];
-
-        // Only include per-row results once the job has finished
-        if (in_array($batch->status, ['completed', 'failed'])) {
-            $payload['results']       = $batch->results;
-            $payload['error_message'] = $batch->error_message;
-        }
-
-        return response()->json($payload, 200);
+            'results' => $summary['results'],
+        ], 200);
     }
 
     // ── GET /api/v1/members/{memberId} ─────────────────────────
@@ -92,14 +59,14 @@ class MemberController extends Controller
 
         if (! $member) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Member not found.',
             ], 404);
         }
 
         return response()->json([
             'status' => 'success',
-            'data'   => $member,
+            'data' => $member,
         ]);
     }
 
@@ -108,21 +75,9 @@ class MemberController extends Controller
     public function health(): JsonResponse
     {
         return response()->json([
-            'status'    => 'ok',
+            'status' => 'ok',
             'timestamp' => now()->toIso8601String(),
-            'version'   => config('app.version', '1.0.0'),
+            'version' => config('app.version', '1.0.0'),
         ]);
-    }
-
-    // ── Helpers ────────────────────────────────────────────────
-
-    private function envelope(array $result): array
-    {
-        return [
-            'status'  => $result['status'],
-            'message' => $result['message'],
-            'data'    => $result['data'],
-            'errors'  => $result['errors'] ?: null,
-        ];
     }
 }

@@ -11,14 +11,15 @@ return new class extends Migration
         Schema::create('members', function (Blueprint $table) {
             $table->id();
             $table->string('member_id', 12)->unique(); // M000000001
-            $table->string('first_name', 100);
-            $table->string('last_name', 100);
+            $table->string('first_name', 50);
+            $table->string('last_name', 50);
             $table->date('date_of_birth');
             $table->enum('gender', ['M', 'F', 'Other']);
             $table->string('email', 255)->unique();
             $table->string('phone', 20)->unique();
-            $table->string('employer_name', 255);
-            $table->enum('employment_status', ['Active', 'Inactive', 'Casual', 'Part-time', 'Full-time']);
+            $table->string('employer_name', 100);
+            $table->enum('employment_status',
+                ['Active', 'On-Leave', 'Terminated'])->default('Active');
             $table->string('tax_file_number', 8);
             $table->timestamps();
             $table->softDeletes();

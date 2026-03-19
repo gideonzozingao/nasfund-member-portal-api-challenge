@@ -15,7 +15,7 @@ use Throwable;
 
 class BulkMemberDataProcessing implements ShouldQueue
 {
-    use Queueable, InteractsWithQueue, SerializesModels;
+    use InteractsWithQueue, Queueable, SerializesModels;
 
     /**
      * Retry up to 3 times if the job throws an unexpected exception.
@@ -51,12 +51,12 @@ class BulkMemberDataProcessing implements ShouldQueue
 
         Log::info('BulkMemberDataProcessiong: job started', [
             'batch_id' => $this->batchId,
-            'file'     => $batch->original_filename,
+            'file' => $batch->original_filename,
         ]);
 
         // 2. Mark as processing
         $batch->update([
-            'status'     => 'processing',
+            'status' => 'processing',
             'started_at' => now(),
         ]);
 
@@ -65,6 +65,7 @@ class BulkMemberDataProcessing implements ShouldQueue
 
         if (! file_exists($localPath)) {
             $this->markFailed($batch, "CSV file not found on disk: {$batch->file_path}");
+
             return;
         }
 
@@ -74,10 +75,10 @@ class BulkMemberDataProcessing implements ShouldQueue
         $batch->update(['total_rows' => $rows->count()]);
 
         // 5. Process row-by-row — partial success is the goal
-        $results      = [];
+        $results = [];
         $successCount = 0;
         $warningCount = 0;
-        $failedCount  = 0;
+        $failedCount = 0;
 
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 2; // +2: row 1 is the CSV header
@@ -85,20 +86,20 @@ class BulkMemberDataProcessing implements ShouldQueue
             $result = $createAction->execute($row);
 
             $results[] = [
-                'row'     => $rowNumber,
-                'status'  => $result['status'],
+                'row' => $rowNumber,
+                'status' => $result['status'],
                 'message' => $result['message'],
-                'data'    => $result['data'] ? [
+                'data' => $result['data'] ? [
                     'member_id' => $result['data']->member_id,
-                    'email'     => $result['data']->email,
+                    'email' => $result['data']->email,
                 ] : null,
-                'errors'  => $result['errors'] ?: null,
+                'errors' => $result['errors'] ?: null,
             ];
 
             match ($result['status']) {
                 'success' => $successCount++,
                 'warning' => $warningCount++,
-                default   => $failedCount++,
+                default => $failedCount++,
             };
 
             // Flush progress to DB every 50 rows so the status endpoint
@@ -106,22 +107,22 @@ class BulkMemberDataProcessing implements ShouldQueue
             if (($index + 1) % 50 === 0) {
                 $batch->update([
                     'processed_rows' => $index + 1,
-                    'success_count'  => $successCount,
-                    'warning_count'  => $warningCount,
-                    'failed_count'   => $failedCount,
+                    'success_count' => $successCount,
+                    'warning_count' => $warningCount,
+                    'failed_count' => $failedCount,
                 ]);
             }
         }
 
         // 6. Write final state
         $batch->update([
-            'status'         => 'completed',
+            'status' => 'completed',
             'processed_rows' => $rows->count(),
-            'success_count'  => $successCount,
-            'warning_count'  => $warningCount,
-            'failed_count'   => $failedCount,
-            'results'        => $results,
-            'completed_at'   => now(),
+            'success_count' => $successCount,
+            'warning_count' => $warningCount,
+            'failed_count' => $failedCount,
+            'results' => $results,
+            'completed_at' => now(),
         ]);
 
         // 7. Clean up the stored CSV — no longer needed
@@ -129,10 +130,10 @@ class BulkMemberDataProcessing implements ShouldQueue
 
         Log::info('BulkMemberDataProcessiong: job completed', [
             'batch_id' => $this->batchId,
-            'total'    => $rows->count(),
-            'success'  => $successCount,
+            'total' => $rows->count(),
+            'success' => $successCount,
             'warnings' => $warningCount,
-            'failed'   => $failedCount,
+            'failed' => $failedCount,
         ]);
     }
 
@@ -145,7 +146,7 @@ class BulkMemberDataProcessing implements ShouldQueue
     public function failed(Throwable $exception): void
     {
         Log::error('BulkMemberDataProcessiong: job failed after retries', [
-            'batch_id'  => $this->batchId,
+            'batch_id' => $this->batchId,
             'exception' => $exception->getMessage(),
         ]);
 
@@ -161,9 +162,9 @@ class BulkMemberDataProcessing implements ShouldQueue
     private function markFailed(BulkUploadBatch $batch, string $message): void
     {
         $batch->update([
-            'status'        => 'failed',
+            'status' => 'failed',
             'error_message' => $message,
-            'completed_at'  => now(),
+            'completed_at' => now(),
         ]);
     }
 }

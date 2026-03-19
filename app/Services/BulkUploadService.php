@@ -2,61 +2,67 @@
 
 namespace App\Services;
 
-use App\Jobs\BulkMemberDataProcessing;
-use App\Models\BulkUploadBatch;
+use App\Actions\CreateMemberAction;
+use App\DTOs\CreateMemberResponseDTO;
+use App\Utils\CsvParser;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 
 class BulkUploadService
 {
-    /**
-     * Accept a CSV upload, persist it to disk, create a tracking record,
-     * and dispatch the background job.
-     *
-     * Returns the BulkUploadBatch so the controller can give the client
-     * a batch_id to poll for progress.
-     *
-     * Heavy lifting (row parsing + member creation) is entirely inside
-     * the BulkMemberDataProcessiong job — this method is intentionally thin.
-     */
-    public function dispatch(UploadedFile $file): BulkUploadBatch
-    {
-        // 1. Persist the CSV to the 'local' disk under bulk-uploads/
-        //    We store it before dispatching so the job can always find it,
-        //    even if it is delayed in the queue for several minutes.
-        $storedPath = $file->store('bulk-uploads', 'local');
+    public function __construct(
+        private CsvParser $parser,
+        private CreateMemberAction $createAction,
+    ) {}
 
-        Log::info('BulkUploadService: CSV stored', [
-            'path'     => $storedPath,
+    /**
+     * Parse the CSV and create each member directly — no queue, no job.
+     * Processes row-by-row so partial success is always possible.
+     *
+     * Returns:
+     * [
+     *   'totalRecords' => int,
+     *   'successCount' => int,
+     *   'errorCount'   => int,
+     *   'results'      => [ ['row' => int, ...DTO fields], ... ]
+     * ]
+     */
+    public function process(UploadedFile $file): array
+    {
+        Log::info('BulkUploadService: processing started', [
             'filename' => $file->getClientOriginalName(),
-            'size'     => $file->getSize(),
+            'size' => $file->getSize(),
         ]);
 
-        // 2. Create the batch tracking record (status: pending)
-        $batch = BulkUploadBatch::create([
-            'file_path'         => $storedPath,
-            'original_filename' => $file->getClientOriginalName(),
-            'status'            => 'pending',
+        $rows = $this->parser->parse($file);
+        $results = [];
+        $successCount = 0;
+        $errorCount = 0;
+
+        foreach ($rows as $index => $row) {
+            $rowNumber = $index + 2; // +2: row 1 is the CSV header
+
+            $dto = CreateMemberResponseDTO::fromActionResult(
+                $this->createAction->execute($row)
+            );
+
+            $results[] = array_merge(['row' => $rowNumber], $dto->toArray());
+
+            $dto->isError() ? $errorCount++ : $successCount++;
+        }
+
+        Log::info('BulkUploadService: processing complete', [
+            'filename' => $file->getClientOriginalName(),
+            'totalRecords' => $rows->count(),
+            'successCount' => $successCount,
+            'errorCount' => $errorCount,
         ]);
 
-        // 3. Dispatch the job — passes only the batch_id (small payload)
-        BulkMemberDataProcessing::dispatch($batch->batch_id)
-            ->onQueue('bulk-uploads');   // dedicated queue keeps bulk work
-        // from blocking single-member creates
-
-        Log::info('BulkUploadService: job dispatched', [
-            'batch_id' => $batch->batch_id,
-        ]);
-
-        return $batch;
-    }
-
-    /**
-     * Retrieve a batch by its public UUID.
-     * Returns null if not found so the controller can 404 cleanly.
-     */
-    public function findBatch(string $batchId): ?BulkUploadBatch
-    {
-        return BulkUploadBatch::where('batch_id', $batchId)->first();
+        return [
+            'totalRecords' => $rows->count(),
+            'successCount' => $successCount,
+            'errorCount' => $errorCount,
+            'results' => $results,
+        ];
     }
 }

@@ -43,7 +43,7 @@ class MemberObserver
     {
         Log::info('MemberObserver: new member persisted', [
             'member_id' => $member->member_id,
-            'email'     => $member->email,
+            'email' => $member->email,
         ]);
 
         // Future: dispatch(new SendWelcomeEmail($member));
@@ -75,7 +75,7 @@ class MemberObserver
     {
         Log::info('MemberObserver: member updated', [
             'member_id' => $member->member_id,
-            'changed'   => array_keys($member->getChanges()),
+            'changed' => array_keys($member->getChanges()),
         ]);
     }
 
@@ -106,7 +106,7 @@ class MemberObserver
     {
         Log::warning('MemberObserver: member permanently deleted', [
             'member_id' => $member->member_id,
-            'email'     => $member->email,
+            'email' => $member->email,
         ]);
     }
 
@@ -131,7 +131,7 @@ class MemberObserver
                 ? (int) ltrim(substr($last, 1), '0') + 1  // strip "M" then cast
                 : 1;
 
-            return 'M' . str_pad($next, 9, '0', STR_PAD_LEFT);
+            return 'M'.str_pad($next, 9, '0', STR_PAD_LEFT);
         });
     }
 }

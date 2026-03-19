@@ -4,9 +4,9 @@ namespace App\Models;
 
 use App\Observers\MemberObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 #[ObservedBy(MemberObserver::class)]
 class Member extends Model
@@ -28,8 +28,8 @@ class Member extends Model
 
     protected $casts = [
         'date_of_birth' => 'date',
-        'created_at'    => 'datetime',
-        'updated_at'    => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     protected $hidden = [
