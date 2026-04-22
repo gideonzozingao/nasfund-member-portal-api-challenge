@@ -4,8 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Models\ApiToken;
 use Closure;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ApiTokenMiddleware
 {
@@ -48,10 +48,10 @@ class ApiTokenMiddleware
     private function unauthorized(string $message): JsonResponse
     {
         return response()->json([
-            'status'  => 'error',
+            'status' => 'error',
             'message' => $message,
-            'errors'  => null,
-            'data'    => null,
+            'errors' => null,
+            'data' => null,
         ], 401);
     }
 }

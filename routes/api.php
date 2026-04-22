@@ -24,7 +24,7 @@ Route::prefix('v1')->group(function () {
 
         // Single member create + show — standard 60/min rate limit
         Route::middleware('throttle:api')->group(function () {
-            Route::post('/create',    [MemberController::class, 'create']);
+            Route::post('/create', [MemberController::class, 'create']);
             Route::get('/{memberId}', [MemberController::class, 'show']);
         });
 
